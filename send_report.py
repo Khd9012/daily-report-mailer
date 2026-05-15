@@ -145,20 +145,24 @@ def parse_env_addresses(name: str) -> list[str] | None:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-def build_message(sender: dict, subject: str, body: str) -> tuple[EmailMessage, list[str]]:
+def get_recipients(report_type: str) -> tuple[list[str], list[str], list[str]]:
+    prefix = "DAILY_REPORT" if report_type == "daily" else "WEEKLY_REPORT"
+    report_to = parse_env_addresses(f"{prefix}_TO")
+    report_cc = parse_env_addresses(f"{prefix}_CC")
+    report_bcc = parse_env_addresses(f"{prefix}_BCC")
+
+    if report_to is None and report_cc is None and report_bcc is None:
+        report_to = parse_env_addresses("REPORT_TO")
+        report_cc = parse_env_addresses("REPORT_CC")
+        report_bcc = parse_env_addresses("REPORT_BCC")
+
+    return report_to or [], report_cc or [], report_bcc or []
+
+
+def build_message(report_type: str, sender: dict, subject: str, body: str) -> tuple[EmailMessage, list[str]]:
     smtp_user = os.environ.get("SMTP_USER") or sender.get("email") or "no-reply@example.com"
     from_name = os.environ.get("DEFAULT_FROM_NAME") or sender.get("displayName") or smtp_user
-
-    to = parse_env_addresses("REPORT_TO")
-    cc = parse_env_addresses("REPORT_CC")
-    bcc = parse_env_addresses("REPORT_BCC")
-
-    if to is None:
-        to = []
-    if cc is None:
-        cc = []
-    if bcc is None:
-        bcc = []
+    to, cc, bcc = get_recipients(report_type)
 
     if not to and not cc and not bcc:
         raise SystemExit("No recipients found. Add at least one to/cc/bcc address.")
@@ -211,7 +215,7 @@ def main() -> None:
     else:
         subject, body = build_weekly(sender, report)
 
-    msg, all_recipients = build_message(sender, subject, body)
+    msg, all_recipients = build_message(args.type, sender, subject, body)
 
     if args.dry_run:
         print("----- EMAIL PREVIEW -----")

@@ -35,9 +35,13 @@ SENDER_TEAM=개발팀
 SENDER_TITLE=과장
 DEFAULT_FROM_NAME=
 
-REPORT_TO=recipient1@codeidea.dev,recipient2@codeidea.dev
-REPORT_CC=manager@codeidea.dev
-REPORT_BCC=
+DAILY_REPORT_TO=daily-recipient1@codeidea.dev,daily-recipient2@codeidea.dev
+DAILY_REPORT_CC=daily-manager@codeidea.dev
+DAILY_REPORT_BCC=
+
+WEEKLY_REPORT_TO=weekly-recipient1@codeidea.dev,weekly-recipient2@codeidea.dev
+WEEKLY_REPORT_CC=weekly-manager@codeidea.dev
+WEEKLY_REPORT_BCC=
 ```
 
 `DEFAULT_FROM_NAME`이 비어 있으면 `SENDER_NAME`이 보낸 사람 표시 이름으로 사용됩니다.
@@ -68,8 +72,8 @@ python send_report.py --type daily --report reports/daily.2026-05-15.json --dry-
 
 ```text
 From: 홍길동 <your.name@codeidea.dev>
-To: recipient1@codeidea.dev, recipient2@codeidea.dev
-Cc: manager@codeidea.dev
+To: daily-recipient1@codeidea.dev, daily-recipient2@codeidea.dev
+Cc: daily-manager@codeidea.dev
 Subject: [일일보고] 2026-05-15 (금) 일일보고 - 홍길동
 
 안녕하세요, 개발팀 홍길동입니다.
@@ -141,8 +145,8 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 
 ```text
 From: 홍길동 <your.name@codeidea.dev>
-To: recipient1@codeidea.dev, recipient2@codeidea.dev
-Cc: manager@codeidea.dev
+To: weekly-recipient1@codeidea.dev, weekly-recipient2@codeidea.dev
+Cc: weekly-manager@codeidea.dev
 Subject: [주간보고] 2026-05 둘째주 주간보고 - 홍길동
 
 안녕하세요, 개발팀 홍길동입니다.
@@ -229,6 +233,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 ## 주의사항
 
 - SMTP는 예약 발송 기능이 없습니다. 스크립트 실행 시점에 바로 발송됩니다.
-- 수신자, 참조, 숨은참조는 `.env`의 `REPORT_TO`, `REPORT_CC`, `REPORT_BCC`에서 설정합니다.
+- 일일보고 수신자, 참조, 숨은참조는 `.env`의 `DAILY_REPORT_TO`, `DAILY_REPORT_CC`, `DAILY_REPORT_BCC`에서 설정합니다.
+- 주간보고 수신자, 참조, 숨은참조는 `.env`의 `WEEKLY_REPORT_TO`, `WEEKLY_REPORT_CC`, `WEEKLY_REPORT_BCC`에서 설정합니다.
 - 여러 이메일은 콤마로 구분합니다.
 - 실제 발송 전에는 항상 `--dry-run`으로 제목, 본문, 수신자를 확인하세요.
