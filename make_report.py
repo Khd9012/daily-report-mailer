@@ -63,7 +63,7 @@ def build_daily() -> dict:
     return {
         "date": now.strftime("%Y-%m-%d"),
         "day": WEEKDAYS_KO[now.weekday()],
-        "todayTasks": ask_task_blocks("금일 예정 업무"),
+        "todayTasks": ask_task_blocks("금일 진행 업무"),
         "issues": ask_task_blocks("이슈사항"),
         "tomorrowTasks": ask_task_blocks("명일 예정 업무"),
     }
@@ -106,4 +106,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
