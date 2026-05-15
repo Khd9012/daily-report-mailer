@@ -64,6 +64,37 @@ reports/daily.2026-05-15.json
 python send_report.py --type daily --report reports/daily.2026-05-15.json --dry-run
 ```
 
+미리보기 예시:
+
+```text
+From: 홍길동 <your.name@codeidea.dev>
+To: recipient1@codeidea.dev, recipient2@codeidea.dev
+Cc: manager@codeidea.dev
+Subject: [일일보고] 2026-05-15 (금) 일일보고 - 홍길동
+
+안녕하세요, 개발팀 홍길동입니다.
+2026-05-15 (금) 일일보고를 작성하여 송부드립니다.
+
+하기 내용 확인 부탁드립니다.
+
+[금일 예정 업무]
+
+1. 프로젝트명
+- 업무 내용
+- 업무 내용
+* 관련 링크/파일
+  - Figma 링크 또는 관련 파일 링크
+
+[이슈사항]
+
+없음
+
+[명일 예정 업무]
+
+1. 프로젝트명
+- 업무 내용
+```
+
 실제 발송:
 
 ```powershell
@@ -104,6 +135,40 @@ python weekly_from_daily.py --start 2026-05-11 --end 2026-05-15
 
 ```powershell
 python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.json --dry-run
+```
+
+미리보기 예시:
+
+```text
+From: 홍길동 <your.name@codeidea.dev>
+To: recipient1@codeidea.dev, recipient2@codeidea.dev
+Cc: manager@codeidea.dev
+Subject: [주간보고] 2026-05 둘째주 주간보고 - 홍길동
+
+안녕하세요, 개발팀 홍길동입니다.
+2026-05 둘째주 주간보고를 작성하여 송부드립니다.
+
+하기 내용 확인 부탁드립니다.
+
+[금주 진행 업무]
+
+1. 2026-05-11 / 프로젝트명
+- 업무 내용
+- 업무 내용
+
+[이슈사항]
+
+없음
+
+[차주 예정 업무]
+
+1. 2026-05-15 / 프로젝트명
+- 업무 내용
+
+[종합 의견]
+
+- 2026-05-11~2026-05-15 일일보고 5건 취합
+- 세부 내용은 금주 진행 업무 및 이슈사항 참고
 ```
 
 실제 발송:
