@@ -1,0 +1,7 @@
+.env
+__pycache__/
+*.py[cod]
+reports/daily.*.json
+reports/weekly.*.json
+!reports/daily.example.json
+!reports/weekly.example.json
