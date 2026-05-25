@@ -81,9 +81,9 @@ def build_daily(sender: dict, report: dict) -> tuple[str, str]:
     day = report.get("day", "")
     date_label = f"{date} ({day})" if day else date
 
-    subject = f"[일일보고] {date_label} 일일보고 - {name}"
+    subject = f"[일간보고] {date_label} 일간보고 - {name}"
     body = f"""안녕하세요, {team} {name}입니다.
-{date_label} 일일보고를 작성하여 송부드립니다.
+{date_label} 일간보고를 작성하여 송부드립니다.
 
 하기 내용 확인 부탁드립니다.
 

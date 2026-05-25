@@ -1,12 +1,12 @@
 # daily-report-mailer
 
-CODEIDEA 일일보고/주간보고 메일을 생성하고 다우오피스 SMTP로 발송하는 간단한 Python 도구입니다.
+CODEIDEA 일간보고/주간보고 메일을 생성하고 다우오피스 SMTP로 발송하는 간단한 Python 도구입니다.
 
 ## 기능
 
-- 일일보고 메일 본문 생성
+- 일간보고 메일 본문 생성
 - 주간보고 메일 본문 생성
-- 저장된 일일보고를 모아 주간보고 초안 생성
+- 저장된 일간보고를 모아 주간보고 초안 생성
 - 다우오피스 SMTP 발송
 - 발송 전 미리보기
 - `To`, `Cc`, `Bcc` 지원
@@ -48,9 +48,9 @@ WEEKLY_REPORT_BCC=
 
 `.env`에는 비밀번호가 들어가므로 공유하거나 GitHub에 올리지 마세요. `.gitignore`에 이미 제외되어 있습니다.
 
-## 일일보고 작성
+## 일간보고 작성
 
-대화형 입력으로 오늘 일일보고 JSON 파일을 만듭니다.
+대화형 입력으로 오늘 일간보고 JSON 파일을 만듭니다.
 
 ```powershell
 python make_report.py --type daily
@@ -74,10 +74,10 @@ python send_report.py --type daily --report reports/daily.2026-05-15.json --dry-
 From: 홍길동 <your.name@codeidea.dev>
 To: daily-recipient1@codeidea.dev, daily-recipient2@codeidea.dev
 Cc: daily-manager@codeidea.dev
-Subject: [일일보고] 2026-05-15 (금) 일일보고 - 홍길동
+Subject: [일간보고] 2026-05-15 (금) 일간보고 - 홍길동
 
 안녕하세요, 개발팀 홍길동입니다.
-2026-05-15 (금) 일일보고를 작성하여 송부드립니다.
+2026-05-15 (금) 일간보고를 작성하여 송부드립니다.
 
 하기 내용 확인 부탁드립니다.
 
@@ -115,7 +115,7 @@ python send_report.py --type daily --report reports/daily.2026-05-15.json
 python make_report.py --type weekly
 ```
 
-저장된 일일보고를 모아 자동 생성:
+저장된 일간보고를 모아 자동 생성:
 
 ```powershell
 python weekly_from_daily.py --week previous
@@ -171,7 +171,7 @@ Subject: [주간보고] 2026-05 둘째주 주간보고 - 홍길동
 
 [종합 의견]
 
-- 2026-05-11~2026-05-15 일일보고 5건 취합
+- 2026-05-11~2026-05-15 일간보고 5건 취합
 - 세부 내용은 금주 진행 업무 및 이슈사항 참고
 ```
 
@@ -197,7 +197,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 
 ## 보고 JSON 구조
 
-일일보고:
+일간보고:
 
 ```json
 {
@@ -233,7 +233,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 ## 주의사항
 
 - SMTP는 예약 발송 기능이 없습니다. 스크립트 실행 시점에 바로 발송됩니다.
-- 일일보고 수신자, 참조, 숨은참조는 `.env`의 `DAILY_REPORT_TO`, `DAILY_REPORT_CC`, `DAILY_REPORT_BCC`에서 설정합니다.
+- 일간보고 수신자, 참조, 숨은참조는 `.env`의 `DAILY_REPORT_TO`, `DAILY_REPORT_CC`, `DAILY_REPORT_BCC`에서 설정합니다.
 - 주간보고 수신자, 참조, 숨은참조는 `.env`의 `WEEKLY_REPORT_TO`, `WEEKLY_REPORT_CC`, `WEEKLY_REPORT_BCC`에서 설정합니다.
 - 여러 이메일은 콤마로 구분합니다.
 - 실제 발송 전에는 항상 `--dry-run`으로 제목, 본문, 수신자를 확인하세요.

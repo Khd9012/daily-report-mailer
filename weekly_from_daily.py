@@ -88,7 +88,7 @@ def build_weekly_from_daily(start: date, end: date) -> tuple[dict, list[Path]]:
         "issues": issues,
         "nextWeekTasks": next_week_tasks,
         "summary": [
-            f"{start.isoformat()}~{end.isoformat()} 일일보고 {len(used_files)}건 취합",
+            f"{start.isoformat()}~{end.isoformat()} 일간보고 {len(used_files)}건 취합",
             "세부 내용은 금주 진행 업무 및 이슈사항 참고",
         ],
     }
