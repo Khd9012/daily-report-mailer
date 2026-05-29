@@ -134,6 +134,32 @@ def build_weekly(sender: dict, report: dict) -> tuple[str, str]:
     return subject, body.strip() + "\n"
 
 
+def build_remote(sender: dict, report: dict) -> tuple[str, str]:
+    name = sender["displayName"]
+    team = sender.get("team", "OO팀")
+    date = report["date"]
+    day = report.get("day", "")
+    date_label = f"{date} ({day})" if day else date
+    work_time = report.get("workTime", "09:00~12:00")
+    issues = format_task_blocks(report.get("issues", [])) if report.get("issues") else ""
+
+    subject = f"[재택업무보고] {date_label} 재택업무보고 - {name}"
+    body = f"""안녕하세요, {team} {name}입니다.
+{date_label} {work_time} 재택업무보고를 작성하여 송부드립니다.
+하기 내용 확인 부탁드립니다.
+
+[오전 업무]
+
+{format_task_blocks(report.get("morningTasks", []))}
+※ 업무 내용은 최대한 상세히 작성 부탁드립니다.
+* 실제 업무 진행 Figma 링크 및 관련 파일 첨부 필수
+
+[이슈사항]
+{issues}
+"""
+    return subject, body.strip() + "\n"
+
+
 def normalize_addresses(values: list[str] | None) -> list[str]:
     return [value.strip() for value in values or [] if value.strip()]
 
@@ -146,10 +172,20 @@ def parse_env_addresses(name: str) -> list[str] | None:
 
 
 def get_recipients(report_type: str) -> tuple[list[str], list[str], list[str]]:
-    prefix = "DAILY_REPORT" if report_type == "daily" else "WEEKLY_REPORT"
+    prefixes = {
+        "daily": "DAILY_REPORT",
+        "weekly": "WEEKLY_REPORT",
+        "remote": "REMOTE_REPORT",
+    }
+    prefix = prefixes[report_type]
     report_to = parse_env_addresses(f"{prefix}_TO")
     report_cc = parse_env_addresses(f"{prefix}_CC")
     report_bcc = parse_env_addresses(f"{prefix}_BCC")
+
+    if report_type == "remote" and not report_to and not report_cc and not report_bcc:
+        report_to = parse_env_addresses("DAILY_REPORT_TO")
+        report_cc = parse_env_addresses("DAILY_REPORT_CC")
+        report_bcc = parse_env_addresses("DAILY_REPORT_BCC")
 
     if report_to is None and report_cc is None and report_bcc is None:
         report_to = parse_env_addresses("REPORT_TO")
@@ -199,8 +235,8 @@ def send_message(msg: EmailMessage, all_recipients: list[str]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate and send daily/weekly report email.")
-    parser.add_argument("--type", choices=["daily", "weekly"], required=True)
+    parser = argparse.ArgumentParser(description="Generate and send report email.")
+    parser.add_argument("--type", choices=["daily", "weekly", "remote"], required=True)
     parser.add_argument("--report", required=True, help="Path to report JSON file.")
     parser.add_argument("--env", default=".env")
     parser.add_argument("--dry-run", action="store_true")
@@ -212,8 +248,10 @@ def main() -> None:
     sender = build_sender()
     if args.type == "daily":
         subject, body = build_daily(sender, report)
-    else:
+    elif args.type == "weekly":
         subject, body = build_weekly(sender, report)
+    else:
+        subject, body = build_remote(sender, report)
 
     msg, all_recipients = build_message(args.type, sender, subject, body)
 

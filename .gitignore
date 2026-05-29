@@ -3,5 +3,7 @@ __pycache__/
 *.py[cod]
 reports/daily.*.json
 reports/weekly.*.json
+reports/remote.*.json
 !reports/daily.example.json
 !reports/weekly.example.json
+!reports/remote.example.json

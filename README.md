@@ -1,11 +1,12 @@
 # daily-report-mailer
 
-CODEIDEA 일간보고/주간보고 메일을 생성하고 다우오피스 SMTP로 발송하는 간단한 Python 도구입니다.
+CODEIDEA 일간보고/주간보고/재택업무보고 메일을 생성하고 다우오피스 SMTP로 발송하는 간단한 Python 도구입니다.
 
 ## 기능
 
 - 일간보고 메일 본문 생성
 - 주간보고 메일 본문 생성
+- 재택업무보고 메일 본문 생성
 - 저장된 일간보고를 모아 주간보고 초안 생성
 - 다우오피스 SMTP 발송
 - 발송 전 미리보기
@@ -42,6 +43,10 @@ DAILY_REPORT_BCC=
 WEEKLY_REPORT_TO=weekly-recipient1@codeidea.dev,weekly-recipient2@codeidea.dev
 WEEKLY_REPORT_CC=weekly-manager@codeidea.dev
 WEEKLY_REPORT_BCC=
+
+REMOTE_REPORT_TO=
+REMOTE_REPORT_CC=
+REMOTE_REPORT_BCC=
 ```
 
 `DEFAULT_FROM_NAME`이 비어 있으면 `SENDER_NAME`이 보낸 사람 표시 이름으로 사용됩니다.
@@ -104,6 +109,53 @@ Subject: [일간보고] 2026-05-15 (금) 일간보고 - 홍길동
 ```powershell
 python send_report.py --type daily --report reports/daily.2026-05-15.json
 ```
+
+## 재택업무보고 작성
+
+대화형 입력으로 재택업무보고 JSON 파일을 만듭니다.
+
+```powershell
+python make_report.py --type remote
+```
+
+생성 예시:
+
+```text
+reports/remote.2026-05-13.json
+```
+
+발송 전 미리보기:
+
+```powershell
+python send_report.py --type remote --report reports/remote.2026-05-13.json --dry-run
+```
+
+미리보기 예시:
+
+```text
+From: 홍길동 <your.name@codeidea.dev>
+To: daily-recipient1@codeidea.dev, daily-recipient2@codeidea.dev
+Cc: daily-manager@codeidea.dev
+Subject: [재택업무보고] 2026-05-13 (월) 재택업무보고 - 홍길동
+
+안녕하세요, 개발팀 홍길동입니다.
+2026-05-13 (월) 09:00~12:00 재택업무보고를 작성하여 송부드립니다.
+하기 내용 확인 부탁드립니다.
+
+[오전 업무]
+
+1. 프로젝트명
+- 업무 내용
+- 업무 내용
+* 관련 링크/파일
+  - Figma 링크 또는 관련 파일 링크
+※ 업무 내용은 최대한 상세히 작성 부탁드립니다.
+* 실제 업무 진행 Figma 링크 및 관련 파일 첨부 필수
+
+[이슈사항]
+```
+
+재택업무보고 수신자를 따로 쓰려면 `.env`의 `REMOTE_REPORT_TO`, `REMOTE_REPORT_CC`, `REMOTE_REPORT_BCC`를 채웁니다. 비워두면 일간보고 수신자 설정을 사용합니다.
 
 ## 주간보고 작성
 
@@ -192,6 +244,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 ├── weekly_from_daily.py
 └── reports
     ├── daily.example.json
+    ├── remote.example.json
     └── weekly.example.json
 ```
 
@@ -228,6 +281,24 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 }
 ```
 
+재택업무보고:
+
+```json
+{
+  "date": "2026-05-13",
+  "day": "월",
+  "workTime": "09:00~12:00",
+  "morningTasks": [
+    {
+      "project": "프로젝트명",
+      "items": ["업무 내용"],
+      "links": []
+    }
+  ],
+  "issues": []
+}
+```
+
 보통은 JSON을 직접 만들 필요 없이 `make_report.py`를 사용하면 됩니다.
 
 ## 주의사항
@@ -235,5 +306,6 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 - SMTP는 예약 발송 기능이 없습니다. 스크립트 실행 시점에 바로 발송됩니다.
 - 일간보고 수신자, 참조, 숨은참조는 `.env`의 `DAILY_REPORT_TO`, `DAILY_REPORT_CC`, `DAILY_REPORT_BCC`에서 설정합니다.
 - 주간보고 수신자, 참조, 숨은참조는 `.env`의 `WEEKLY_REPORT_TO`, `WEEKLY_REPORT_CC`, `WEEKLY_REPORT_BCC`에서 설정합니다.
+- 재택업무보고 수신자, 참조, 숨은참조는 `.env`의 `REMOTE_REPORT_TO`, `REMOTE_REPORT_CC`, `REMOTE_REPORT_BCC`에서 설정할 수 있습니다.
 - 여러 이메일은 콤마로 구분합니다.
 - 실제 발송 전에는 항상 `--dry-run`으로 제목, 본문, 수신자를 확인하세요.

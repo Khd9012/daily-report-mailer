@@ -81,20 +81,39 @@ def build_weekly() -> dict:
     }
 
 
+def build_remote() -> dict:
+    now = today_kst()
+    work_time = ask("재택 근무 시간 [기본: 09:00~12:00]: ") or "09:00~12:00"
+    return {
+        "date": now.strftime("%Y-%m-%d"),
+        "day": WEEKDAYS_KO[now.weekday()],
+        "workTime": work_time,
+        "morningTasks": ask_task_blocks("오전 업무"),
+        "issues": ask_task_blocks("이슈사항"),
+    }
+
+
 def default_output_path(report_type: str) -> Path:
     now = today_kst()
     if report_type == "daily":
         return ROOT / "reports" / f"daily.{now.strftime('%Y-%m-%d')}.json"
+    if report_type == "remote":
+        return ROOT / "reports" / f"remote.{now.strftime('%Y-%m-%d')}.json"
     return ROOT / "reports" / f"weekly.{now.strftime('%Y-%m')}.{week_of_month(now)}.json"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Create a report JSON file interactively.")
-    parser.add_argument("--type", choices=["daily", "weekly"], required=True)
+    parser.add_argument("--type", choices=["daily", "weekly", "remote"], required=True)
     parser.add_argument("--out", help="Output JSON path. Defaults to reports/<type>.<date>.json")
     args = parser.parse_args()
 
-    report = build_daily() if args.type == "daily" else build_weekly()
+    if args.type == "daily":
+        report = build_daily()
+    elif args.type == "weekly":
+        report = build_weekly()
+    else:
+        report = build_remote()
     out_path = Path(args.out) if args.out else default_output_path(args.type)
     if not out_path.is_absolute():
         out_path = ROOT / out_path
