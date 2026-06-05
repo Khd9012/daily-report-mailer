@@ -8,6 +8,12 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parent
 WEEKDAYS_KO = ["월", "화", "수", "목", "금", "토", "일"]
 WEEK_LABELS_KO = ["첫째주", "둘째주", "셋째주", "넷째주", "다섯째주", "여섯째주"]
+REMOTE_WORK_TIME_SLOTS = {
+    "morning": ("1", "09:00~12:00", "오전"),
+    "afternoon": ("2", "13:00~15:30", "오후"),
+    "final-short": ("3", "15:30~17:00", "마감/단축근무"),
+    "final-normal": ("4", "15:30~18:00", "마감/일반근무"),
+}
 
 
 def today_kst() -> datetime:
@@ -58,6 +64,25 @@ def ask_task_blocks(section_name: str) -> list[dict]:
     return blocks
 
 
+def resolve_remote_work_time(slot: str) -> tuple[str, str]:
+    normalized = slot.strip()
+    for key, (number, work_time, _label) in REMOTE_WORK_TIME_SLOTS.items():
+        if normalized in {key, number}:
+            return key, work_time
+
+    valid_slots = ", ".join(REMOTE_WORK_TIME_SLOTS)
+    raise SystemExit(f"Invalid remote work time slot: {slot}. Use one of: {valid_slots}")
+
+
+def ask_remote_work_time() -> tuple[str, str]:
+    print("\n[재택업무보고 시간]")
+    for key, (number, work_time, label) in REMOTE_WORK_TIME_SLOTS.items():
+        print(f"{number}. {work_time} ({label}, --slot {key})")
+
+    selected = ask("시간대 선택 [기본: 1]: ") or "1"
+    return resolve_remote_work_time(selected)
+
+
 def build_daily() -> dict:
     now = today_kst()
     return {
@@ -82,12 +107,13 @@ def build_weekly() -> dict:
     }
 
 
-def build_remote() -> dict:
+def build_remote(slot: str | None = None) -> dict:
     now = today_kst()
-    work_time = ask("재택 근무 시간 [기본: 09:00~12:00]: ") or "09:00~12:00"
+    work_time_slot, work_time = resolve_remote_work_time(slot) if slot else ask_remote_work_time()
     return {
         "date": now.strftime("%Y-%m-%d"),
         "day": WEEKDAYS_KO[now.weekday()],
+        "workTimeSlot": work_time_slot,
         "workTime": work_time,
         "morningTasks": ask_task_blocks("오전 업무"),
         "issues": ask_task_blocks("이슈사항"),
@@ -107,6 +133,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Create a report JSON file interactively.")
     parser.add_argument("--type", choices=["daily", "weekly", "remote"], required=True)
     parser.add_argument("--out", help="Output JSON path. Defaults to reports/<type>.<date>.json")
+    parser.add_argument(
+        "--slot",
+        help="Remote report time slot: morning, afternoon, final-short, final-normal. Numeric aliases 1-4 are also accepted.",
+    )
     args = parser.parse_args()
 
     if args.type == "daily":
@@ -114,7 +144,7 @@ def main() -> None:
     elif args.type == "weekly":
         report = build_weekly()
     else:
-        report = build_remote()
+        report = build_remote(args.slot)
     out_path = Path(args.out) if args.out else default_output_path(args.type)
     if not out_path.is_absolute():
         out_path = ROOT / out_path

@@ -124,6 +124,21 @@ python send_report.py --type daily --report reports/daily.2026-05-15.json
 python make_report.py --type remote
 ```
 
+시간대를 지정해서 만들 수도 있습니다.
+
+```powershell
+python make_report.py --type remote --slot afternoon
+```
+
+재택업무보고 시간대:
+
+```text
+morning      09:00~12:00
+afternoon    13:00~15:30
+final-short  15:30~17:00  단축근무
+final-normal 15:30~18:00  일반근무
+```
+
 생성 예시:
 
 ```text
@@ -307,6 +322,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 {
   "date": "2026-05-13",
   "day": "월",
+  "workTimeSlot": "morning",
   "workTime": "09:00~12:00",
   "morningTasks": [
     {

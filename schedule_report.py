@@ -196,7 +196,7 @@ def create_windows_task(task_name: str, runner_path: Path, scheduled_at: datetim
         "/ST",
         scheduled_at.strftime("%H:%M"),
         "/SD",
-        scheduled_at.strftime("%m/%d/%Y"),
+        scheduled_at.strftime("%Y/%m/%d"),
     ]
     if force:
         command.append("/F")

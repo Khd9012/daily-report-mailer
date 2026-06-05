@@ -1,6 +1,7 @@
 {
   "date": "2026-05-13",
   "day": "월",
+  "workTimeSlot": "morning",
   "workTime": "09:00~12:00",
   "morningTasks": [
     {
