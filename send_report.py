@@ -87,6 +87,10 @@ def build_daily(sender: dict, report: dict) -> tuple[str, str]:
 
 하기 내용 확인 부탁드립니다.
 
+[작일 예정 업무]
+
+{format_task_blocks(report.get("yesterdayTasks", []))}
+
 [금일 예정 업무]
 
 {format_task_blocks(report.get("todayTasks", []))}
@@ -137,6 +141,8 @@ def build_weekly(sender: dict, report: dict) -> tuple[str, str]:
 def build_remote(sender: dict, report: dict) -> tuple[str, str]:
     name = sender["displayName"]
     team = sender.get("team", "OO팀")
+    title = sender.get("title", "")
+    name_with_title = f"{name} {title}" if title else name
     date = report["date"]
     day = report.get("day", "")
     date_label = f"{date} ({day})" if day else date
@@ -144,15 +150,13 @@ def build_remote(sender: dict, report: dict) -> tuple[str, str]:
     issues = format_task_blocks(report.get("issues", [])) if report.get("issues") else ""
 
     subject = f"[재택업무보고] {date_label} 재택업무보고 - {name}"
-    body = f"""안녕하세요, {team} {name}입니다.
+    body = f"""안녕하세요, {team} {name_with_title}입니다.
 {date_label} {work_time} 재택업무보고를 작성하여 송부드립니다.
 하기 내용 확인 부탁드립니다.
 
 [오전 업무]
 
 {format_task_blocks(report.get("morningTasks", []))}
-※ 업무 내용은 최대한 상세히 작성 부탁드립니다.
-* 실제 업무 진행 Figma 링크 및 관련 파일 첨부 필수
 
 [이슈사항]
 {issues}

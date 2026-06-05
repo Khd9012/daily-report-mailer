@@ -1,6 +1,16 @@
 {
   "date": "2026-05-15",
   "day": "금",
+  "yesterdayTasks": [
+    {
+      "project": "프로젝트명",
+      "items": [
+        "업무 내용",
+        "업무 내용"
+      ],
+      "links": []
+    }
+  ],
   "todayTasks": [
     {
       "project": "프로젝트명",
