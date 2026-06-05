@@ -167,7 +167,7 @@ Subject: [재택업무보고] 2026-05-13 (월) 재택업무보고 - 홍길동
 python schedule_report.py --type remote --report reports/remote.2026-05-13.json --at 13:00
 ```
 
-예약 발송은 Windows 작업 스케줄러에 1회성 작업을 등록합니다. 등록 전에 `send_report.py --dry-run`으로 제목, 본문, 수신자를 먼저 확인합니다. 같은 이름의 작업을 덮어쓰려면 `--force`를 추가합니다.
+예약 발송은 Windows에서는 작업 스케줄러, macOS에서는 `launchd` LaunchAgent에 1회성 작업을 등록합니다. 등록 전에 `send_report.py --dry-run`으로 제목, 본문, 수신자를 먼저 확인합니다. 같은 이름의 작업을 덮어쓰려면 `--force`를 추가합니다.
 
 ## 주간보고 작성
 
@@ -323,7 +323,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 
 ## 주의사항
 
-- SMTP는 예약 발송 기능이 없습니다. 스크립트 실행 시점에 바로 발송됩니다.
+- `send_report.py`는 실행 시점에 바로 발송합니다. 예약 발송이 필요하면 `schedule_report.py`로 OS 스케줄러에 등록합니다.
 - 일간보고 수신자, 참조, 숨은참조는 `.env`의 `DAILY_REPORT_TO`, `DAILY_REPORT_CC`, `DAILY_REPORT_BCC`에서 설정합니다.
 - 주간보고 수신자, 참조, 숨은참조는 `.env`의 `WEEKLY_REPORT_TO`, `WEEKLY_REPORT_CC`, `WEEKLY_REPORT_BCC`에서 설정합니다.
 - 재택업무보고 수신자, 참조, 숨은참조는 `.env`의 `REMOTE_REPORT_TO`, `REMOTE_REPORT_CC`, `REMOTE_REPORT_BCC`에서 설정할 수 있습니다.

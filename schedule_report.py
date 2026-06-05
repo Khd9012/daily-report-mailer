@@ -1,5 +1,8 @@
 import argparse
+import os
+import plistlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -55,7 +58,7 @@ def sanitize_task_name(value: str) -> str:
     return normalized or "report"
 
 
-def build_runner(
+def build_windows_runner(
     python_path: Path,
     report_type: str,
     report_path: Path,
@@ -103,6 +106,62 @@ def build_runner(
     return runner_path
 
 
+def build_macos_runner(
+    python_path: Path,
+    report_type: str,
+    report_path: Path,
+    env_path: Path,
+    task_name: str,
+    label: str,
+    plist_path: Path,
+    scheduled_at: datetime,
+) -> Path:
+    TASK_DIR.mkdir(exist_ok=True)
+
+    safe_name = sanitize_task_name(task_name)
+    runner_path = TASK_DIR / f"{safe_name}.sh"
+    log_path = TASK_DIR / f"{safe_name}.log"
+    send_args = [
+        str(python_path),
+        str(ROOT / "send_report.py"),
+        "--type",
+        report_type,
+        "--report",
+        relative_or_absolute(report_path),
+        "--env",
+        relative_or_absolute(env_path),
+    ]
+    send_command = " ".join(shlex.quote(arg) for arg in send_args)
+
+    runner_path.write_text(
+        "\n".join(
+            [
+                "#!/bin/sh",
+                "set +e",
+                f"LOG_PATH={shlex.quote(str(log_path))}",
+                f"PLIST_PATH={shlex.quote(str(plist_path))}",
+                f"LABEL={shlex.quote(label)}",
+                "cleanup() {",
+                '  /bin/launchctl bootout "gui/$(id -u)" "$PLIST_PATH" >/dev/null 2>&1 || /bin/launchctl unload "$PLIST_PATH" >/dev/null 2>&1 || true',
+                '  rm -f "$PLIST_PATH"',
+                "}",
+                "trap cleanup EXIT",
+                "export PYTHONUTF8=1",
+                f"cd {shlex.quote(str(ROOT))} || exit 1",
+                f'echo "===== {scheduled_at.isoformat()} =====" >> "$LOG_PATH"',
+                f"{send_command} >> \"$LOG_PATH\" 2>&1",
+                "EXIT_CODE=$?",
+                'echo "Exit code: $EXIT_CODE" >> "$LOG_PATH"',
+                "exit $EXIT_CODE",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    runner_path.chmod(0o755)
+    return runner_path
+
+
 def run_preview(python_path: Path, report_type: str, report_path: Path, env_path: Path) -> None:
     preview_args = [
         str(python_path),
@@ -120,7 +179,7 @@ def run_preview(python_path: Path, report_type: str, report_path: Path, env_path
         raise SystemExit(result.returncode)
 
 
-def create_task(task_name: str, runner_path: Path, scheduled_at: datetime, force: bool) -> None:
+def create_windows_task(task_name: str, runner_path: Path, scheduled_at: datetime, force: bool) -> None:
     schtasks = shutil.which("schtasks")
     if not schtasks:
         raise SystemExit("Windows Task Scheduler command not found: schtasks")
@@ -145,24 +204,76 @@ def create_task(task_name: str, runner_path: Path, scheduled_at: datetime, force
     subprocess.run(command, check=True)
 
 
+def macos_label(task_name: str) -> str:
+    return f"dev.codeidea.daily-report-mailer.{sanitize_task_name(task_name)}"
+
+
+def create_macos_task(
+    task_name: str,
+    runner_path: Path,
+    scheduled_at: datetime,
+    force: bool,
+) -> Path:
+    launchctl = shutil.which("launchctl")
+    if not launchctl:
+        raise SystemExit("macOS launchctl command not found.")
+
+    label = macos_label(task_name)
+    plist_dir = Path.home() / "Library" / "LaunchAgents"
+    plist_dir.mkdir(parents=True, exist_ok=True)
+    plist_path = plist_dir / f"{label}.plist"
+
+    if plist_path.exists():
+        if not force:
+            raise SystemExit(f"LaunchAgent already exists: {plist_path}. Use --force to overwrite it.")
+        subprocess.run([launchctl, "bootout", f"gui/{os.getuid()}", str(plist_path)], check=False)
+        subprocess.run([launchctl, "unload", str(plist_path)], check=False)
+
+    log_path = TASK_DIR / f"{sanitize_task_name(task_name)}.log"
+    plist = {
+        "Label": label,
+        "ProgramArguments": [str(runner_path)],
+        "StartCalendarInterval": {
+            "Month": scheduled_at.month,
+            "Day": scheduled_at.day,
+            "Hour": scheduled_at.hour,
+            "Minute": scheduled_at.minute,
+        },
+        "StandardOutPath": str(log_path),
+        "StandardErrorPath": str(log_path),
+        "WorkingDirectory": str(ROOT),
+        "RunAtLoad": False,
+    }
+
+    with plist_path.open("wb") as file:
+        plistlib.dump(plist, file)
+
+    result = subprocess.run([launchctl, "bootstrap", f"gui/{os.getuid()}", str(plist_path)], check=False)
+    if result.returncode != 0:
+        subprocess.run([launchctl, "load", str(plist_path)], check=True)
+
+    return plist_path
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Schedule a one-time report email with Windows Task Scheduler.")
+    parser = argparse.ArgumentParser(description="Schedule a one-time report email.")
     parser.add_argument("--type", choices=["daily", "weekly", "remote"], required=True)
     parser.add_argument("--report", required=True, help="Report JSON path.")
     parser.add_argument("--at", required=True, type=parse_clock, help="Send time in HH:MM, for example 13:00.")
     parser.add_argument("--date", type=parse_date, help="Send date in YYYY-MM-DD. Defaults to today in Asia/Seoul.")
     parser.add_argument("--env", default=".env", help="Env file path. Defaults to .env.")
-    parser.add_argument("--name", help="Windows task name.")
+    parser.add_argument("--name", help="Scheduler task name.")
     parser.add_argument("--python", default=sys.executable, help="Python executable used by the scheduled task.")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing task with the same name.")
     parser.add_argument("--dry-run", action="store_true", help="Preview and print the schedule command without creating it.")
     args = parser.parse_args()
 
-    if sys.platform != "win32":
-        raise SystemExit("schedule_report.py currently supports Windows Task Scheduler only.")
+    if sys.platform not in {"win32", "darwin"}:
+        raise SystemExit("schedule_report.py currently supports Windows and macOS only.")
 
     send_date = args.date or datetime.now(KST).date()
     scheduled_at = datetime.combine(send_date, args.at, tzinfo=KST)
+    local_scheduled_at = scheduled_at.astimezone()
     now = datetime.now(KST)
     if scheduled_at <= now:
         raise SystemExit(f"Scheduled time is in the past: {scheduled_at.strftime('%Y-%m-%d %H:%M')}")
@@ -174,21 +285,43 @@ def main() -> None:
     task_name = args.name or f"daily-report-mailer-{args.type}-{send_date.isoformat()}-{args.at.strftime('%H%M')}"
 
     if args.dry_run:
-        runner_path = TASK_DIR / f"{sanitize_task_name(task_name)}.cmd"
+        runner_suffix = ".cmd" if sys.platform == "win32" else ".sh"
+        runner_path = TASK_DIR / f"{sanitize_task_name(task_name)}{runner_suffix}"
         run_preview(python_path, args.type, report_path, env_path)
         print("----- SCHEDULE PREVIEW -----")
         print(f"Task: {task_name}")
         print(f"Run at: {scheduled_at.strftime('%Y-%m-%d %H:%M')} Asia/Seoul")
+        print(f"Scheduler local time: {local_scheduled_at.strftime('%Y-%m-%d %H:%M %Z')}")
         print(f"Runner: {runner_path}")
         print("No task or runner file was created because --dry-run was used.")
         return
 
     run_preview(python_path, args.type, report_path, env_path)
-    runner_path = build_runner(python_path, args.type, report_path, env_path, task_name, scheduled_at)
-    create_task(task_name, runner_path, scheduled_at, args.force)
+    if sys.platform == "win32":
+        runner_path = build_windows_runner(python_path, args.type, report_path, env_path, task_name, scheduled_at)
+        create_windows_task(task_name, runner_path, local_scheduled_at, args.force)
+        scheduler_artifact = None
+    else:
+        label = macos_label(task_name)
+        plist_path = Path.home() / "Library" / "LaunchAgents" / f"{label}.plist"
+        runner_path = build_macos_runner(
+            python_path,
+            args.type,
+            report_path,
+            env_path,
+            task_name,
+            label,
+            plist_path,
+            scheduled_at,
+        )
+        scheduler_artifact = create_macos_task(task_name, runner_path, local_scheduled_at, args.force)
+
     print(f"Scheduled: {task_name}")
     print(f"Run at: {scheduled_at.strftime('%Y-%m-%d %H:%M')} Asia/Seoul")
+    print(f"Scheduler local time: {local_scheduled_at.strftime('%Y-%m-%d %H:%M %Z')}")
     print(f"Runner: {runner_path}")
+    if scheduler_artifact:
+        print(f"LaunchAgent: {scheduler_artifact}")
 
 
 if __name__ == "__main__":
