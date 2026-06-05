@@ -161,6 +161,14 @@ Subject: [재택업무보고] 2026-05-13 (월) 재택업무보고 - 홍길동
 
 재택업무보고 수신자를 따로 쓰려면 `.env`의 `REMOTE_REPORT_TO`, `REMOTE_REPORT_CC`, `REMOTE_REPORT_BCC`를 채웁니다. 비워두면 일간보고 수신자 설정을 사용합니다.
 
+예약 발송:
+
+```powershell
+python schedule_report.py --type remote --report reports/remote.2026-05-13.json --at 13:00
+```
+
+예약 발송은 Windows 작업 스케줄러에 1회성 작업을 등록합니다. 등록 전에 `send_report.py --dry-run`으로 제목, 본문, 수신자를 먼저 확인합니다. 같은 이름의 작업을 덮어쓰려면 `--force`를 추가합니다.
+
 ## 주간보고 작성
 
 주간보고는 두 가지 방식으로 만들 수 있습니다.
@@ -244,6 +252,7 @@ python send_report.py --type weekly --report reports/weekly.2026-05.둘째주.js
 ├── .env.example
 ├── .gitignore
 ├── make_report.py
+├── schedule_report.py
 ├── send_report.py
 ├── weekly_from_daily.py
 └── reports

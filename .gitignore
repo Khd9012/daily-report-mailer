@@ -1,5 +1,6 @@
 .env
 __pycache__/
+.scheduled/
 *.py[cod]
 reports/daily.*.json
 reports/weekly.*.json
