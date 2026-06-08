@@ -87,7 +87,7 @@ def build_daily(sender: dict, report: dict) -> tuple[str, str]:
 
 하기 내용 확인 부탁드립니다.
 
-[작일 예정 업무]
+[작일 처리 업무]
 
 {format_task_blocks(report.get("yesterdayTasks", []))}
 
